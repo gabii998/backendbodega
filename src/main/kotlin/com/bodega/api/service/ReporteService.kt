@@ -5,6 +5,7 @@ import com.bodega.api.dto.ReporteVariedadDto
 import com.bodega.api.repository.CuartelRepository
 import com.bodega.api.repository.JornalRepository
 import com.bodega.api.repository.VariedadCuartelRepository
+import com.bodega.api.repository.VariedadUvaRepository
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -13,8 +14,38 @@ import java.time.LocalDateTime
 class ReporteService(
     private val cuartelRepository: CuartelRepository,
     private val jornalRepository: JornalRepository,
-    private val variedadCuartelRepository: VariedadCuartelRepository
+    private val variedadCuartelRepository: VariedadCuartelRepository,
+    private val variedadRepository:VariedadUvaRepository
 ) {
+
+    fun generarReportePorAnioCuartelVariedad(ano: Int, cuartelId: Int, variedadId: Int): ReporteVariedadDto {
+        val cuartel = cuartelRepository.findById(cuartelId)
+            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
+
+        val variedad = variedadRepository.findById(variedadId)
+            .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: $variedadId") }
+
+        val inicioAno = LocalDateTime.of(ano, 1, 1, 0, 0)
+        val finAno = LocalDateTime.of(ano, 12, 31, 23, 59, 59)
+
+        val variedadCuartel = variedadCuartelRepository.findByCuartelAndVariedad(cuartel, variedad)
+            .orElseThrow { EntityNotFoundException("No existe relación entre el cuartel $cuartelId y la variedad $variedadId") }
+
+        val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
+            cuartel, variedad, inicioAno, finAno
+        )
+
+        val totalJornalesVariedad = jornalesVariedad.sumOf { it.jornales }
+        val rendimientoVariedad = if (variedadCuartel.superficie > 0) totalJornalesVariedad / variedadCuartel.superficie else 0.0
+
+        return ReporteVariedadDto(
+            variedadId = variedad.id,
+            variedadNombre = variedad.nombre,
+            superficie = variedadCuartel.superficie,
+            jornales = totalJornalesVariedad,
+            rendimiento = rendimientoVariedad
+        )
+    }
 
     fun generarReportePorAnioCuartel(ano: Int, cuartelId: Int): ReporteCuartelDto {
         val cuartel = cuartelRepository.findById(cuartelId)
