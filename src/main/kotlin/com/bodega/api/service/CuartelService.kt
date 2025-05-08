@@ -106,7 +106,13 @@ class CuartelService(
         cuartelRepository.deleteById(id)
     }
 
-    fun listarCuarteles(): List<CuartelResponse> {
+    fun listarCuarteles(fincaId:Int?): List<CuartelResponse> {
+        if (fincaId != null) {
+            return cuartelRepository.findAllByFincaId(fincaId).map { cuartel ->
+                convertirACuartelResponse(cuartel)
+            }
+        }
+
         return cuartelRepository.findAll().map { cuartel ->
             convertirACuartelResponse(cuartel)
         }

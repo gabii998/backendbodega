@@ -33,8 +33,10 @@ class CuartelController(private val cuartelService: CuartelService) {
     }
 
     @GetMapping
-    fun listarCuarteles(): ResponseEntity<List<CuartelResponse>> {
-        val cuarteles = cuartelService.listarCuarteles()
+    fun listarCuarteles(
+        @RequestParam(required = false) fincaId: Int?,
+    ): ResponseEntity<List<CuartelResponse>> {
+        val cuarteles = cuartelService.listarCuarteles(fincaId)
         return ResponseEntity.ok(cuarteles)
     }
 

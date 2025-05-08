@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface CuartelRepository : JpaRepository<Cuartel, Int>
+interface CuartelRepository : JpaRepository<Cuartel, Int> {
+    fun findAllByFincaId(fincaId: Int): List<Cuartel>
+}
