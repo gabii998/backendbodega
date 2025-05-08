@@ -8,5 +8,6 @@ data class JornalDto(
     val jornales: Double,
     val empleadoId: Int,
     val tareaId: Int,
-    val variedadId: Int
+    val variedadId: Int,
+    val cuartelId: Int
 )

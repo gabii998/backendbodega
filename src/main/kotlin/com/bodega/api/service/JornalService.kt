@@ -3,21 +3,18 @@ package com.bodega.api.service
 import com.bodega.api.dto.JornalDto
 import com.bodega.api.dto.JornalResponse
 import com.bodega.api.model.Jornal
-import com.bodega.api.repository.EmpleadoRepository
-import com.bodega.api.repository.JornalRepository
-import com.bodega.api.repository.TareaRepository
-import com.bodega.api.repository.VariedadUvaRepository
+import com.bodega.api.repository.*
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 
 @Service
 class JornalService(
     private val jornalRepository: JornalRepository,
     private val empleadoRepository: EmpleadoRepository,
     private val tareaRepository: TareaRepository,
-    private val variedadRepository: VariedadUvaRepository
+    private val variedadRepository: VariedadUvaRepository,
+    private val cuartelRepository: CuartelRepository,
 ) {
 
     @Transactional
@@ -34,13 +31,17 @@ class JornalService(
         val usuario = empleadoRepository.findById(usuarioId)
             .orElseThrow { EntityNotFoundException("Usuario no encontrado con ID: $usuarioId") }
 
+        val cuartel = cuartelRepository.findById(jornalDto.cuartelId)
+            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: ${jornalDto.cuartelId}") }
+
         val jornal = Jornal(
             empleado = empleado,
             tarea = tarea,
             jornales = jornalDto.jornales,
             fecha = jornalDto.fecha,
             cargadoPor = usuario,
-            variedad = variedad
+            variedad = variedad,
+            cuartel = cuartel
         )
 
         val savedJornal = jornalRepository.save(jornal)
@@ -55,6 +56,7 @@ class JornalService(
             empleadoId = jornal.empleado?.id ?: 0,
             variedadId = jornal.variedad?.id ?: 0,
             tareaId = jornal.tarea?.id ?: 0,
+            cuartelId = savedJornal.cuartel?.id ?: 0,
         )
     }
 
@@ -72,11 +74,15 @@ class JornalService(
         val variedad = variedadRepository.findById(jornalDto.variedadId)
             .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: ${jornalDto.variedadId}") }
 
+        val cuartel = cuartelRepository.findById(jornalDto.cuartelId)
+            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: ${jornalDto.variedadId}") }
+
         jornal.empleado = empleado
         jornal.tarea = tarea
         jornal.jornales = jornalDto.jornales
         jornal.fecha = jornalDto.fecha
         jornal.variedad = variedad
+        jornal.cuartel = cuartel
 
         val updatedJornal = jornalRepository.save(jornal)
 
@@ -90,6 +96,7 @@ class JornalService(
             empleadoId = jornal.empleado?.id ?: 0,
             variedadId = jornal.variedad?.id ?: 0,
             tareaId = jornal.tarea?.id ?: 0,
+            cuartelId = updatedJornal.cuartel?.id ?: 0,
         )
     }
 
@@ -114,6 +121,7 @@ class JornalService(
                 empleadoId = jornal.empleado?.id ?: 0,
                 variedadId = jornal.variedad?.id ?: 0,
                 tareaId = jornal.tarea?.id ?: 0,
+                cuartelId = jornal.cuartel?.id ?: 0,
             )
         }
     }

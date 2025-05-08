@@ -11,5 +11,6 @@ data class JornalResponse(
     val tareaNombre: String,
     val jornales: Double,
     val variedadId: Int?,        // Añadido
-    val variedadNombre: String
+    val variedadNombre: String,
+    val cuartelId: Int,
 )

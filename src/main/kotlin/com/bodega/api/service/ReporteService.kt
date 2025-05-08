@@ -36,11 +36,11 @@ class ReporteService(
             .orElseThrow { EntityNotFoundException("No existe relación entre el cuartel $cuartelId y la variedad $variedadId") }
 
         val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
-            cuartel, variedad, inicioAno, finAno
+             variedad.id, inicioAno, finAno
         )
 
         val totalJornalesVariedad = jornalesVariedad.sumOf { it.jornales }
-        val rendimientoVariedad = if (variedadCuartel.superficie > 0) totalJornalesVariedad / variedadCuartel.superficie else 0.0
+        val rendimientoVariedad = 0.0
 
         return ReporteVariedadDto(
             variedadId = variedad.id,
@@ -66,7 +66,7 @@ class ReporteService(
 
         // Obtener todos los jornales para esta variedad en el período
         val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
-            cuartel, variedad, inicioAno, finAno
+            variedad.id, inicioAno, finAno
         )
 
         // Cálculo de jornales totales
@@ -105,7 +105,7 @@ class ReporteService(
         }
 
         // Calcular rendimiento
-        val rendimiento = if (variedadCuartel.superficie > 0) totalJornalesVariedad / variedadCuartel.superficie else 0.0
+        val rendimiento = 0.0
 
         return DetalleVariedadDto(
             idVariedad = variedad.id,
@@ -127,20 +127,20 @@ class ReporteService(
         val inicioAno = LocalDateTime.of(ano, 1, 1, 0, 0)
         val finAno = LocalDateTime.of(ano, 12, 31, 23, 59, 59)
 
-        val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(cuartel, inicioAno, finAno)
+        val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(inicioAno, finAno)
         val jornalesTotales = jornalesCuartel.sumOf { it.jornales }
 
         val variedadesCuartel = variedadCuartelRepository.findByCuartel(cuartel)
         val superficieTotal = variedadesCuartel.sumOf { it.superficie }
 
         // Calcular rendimiento (jornales por hectárea)
-        val rendimiento = if (superficieTotal > 0) jornalesTotales / superficieTotal else 0.0
+        val rendimiento = 0.0
 
         // Generar reporte por variedad
         val reportesPorVariedad = variedadesCuartel.map { vc ->
             val variedad = vc.variedad ?: throw EntityNotFoundException("Variedad no encontrada")
             val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
-                cuartel, variedad, inicioAno, finAno
+                variedad.id, inicioAno, finAno
             )
             val totalJornalesVariedad = jornalesVariedad.sumOf { it.jornales }
             val rendimientoVariedad = if (vc.superficie > 0) totalJornalesVariedad / vc.superficie else 0.0

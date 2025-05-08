@@ -17,17 +17,16 @@ interface JornalRepository : JpaRepository<Jornal, Int> {
     fun findByFechaBetween(inicio: LocalDateTime, fin: LocalDateTime): List<Jornal>
 
     // Consulta corregida para encontrar jornales por cuartel y rango de fechas
-    @Query("SELECT j FROM Jornal j WHERE j.empleado.finca IN (SELECT c.finca FROM Cuartel c WHERE c = :cuartel) AND j.variedad = :variedad AND j.fecha BETWEEN :inicio AND :fin")
+    @Query("SELECT j FROM Jornal j WHERE j.variedad.id = :idVariedad AND j.fecha BETWEEN :inicio AND :fin")
     fun findByCuartelAndVariedadAndFechaBetween(
-        @Param("cuartel") cuartel: Cuartel,
-        @Param("variedad") variedad: VariedadUva,
+        //@Param("cuartel") cuartel: Cuartel,
+        @Param("idVariedad") idVariedad: Int,
         @Param("inicio") inicio: LocalDateTime,
         @Param("fin") fin: LocalDateTime
     ): List<Jornal>
 
-    @Query("SELECT j FROM Jornal j WHERE j.empleado.finca IN (SELECT c.finca FROM Cuartel c WHERE c = :cuartel) AND j.fecha BETWEEN :inicio AND :fin")
+    @Query("SELECT j FROM Jornal j WHERE j.fecha BETWEEN :inicio AND :fin")
     fun findByCuartelAndFechaBetween(
-        @Param("cuartel") cuartel: Cuartel,
         @Param("inicio") inicio: LocalDateTime,
         @Param("fin") fin: LocalDateTime
     ): List<Jornal>

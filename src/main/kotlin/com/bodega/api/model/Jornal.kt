@@ -26,6 +26,10 @@ data class Jornal(
     var fecha: LocalDateTime = LocalDateTime.now(),
 
     @ManyToOne
+    @JoinColumn(name = "cuartelId")
+    var cuartel: Cuartel? = null,
+
+    @ManyToOne
     @JoinColumn(name = "cargadoPor")
     var cargadoPor: Empleado? = null,
 
