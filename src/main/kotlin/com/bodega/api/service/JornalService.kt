@@ -51,7 +51,10 @@ class JornalService(
             empleadoNombre = savedJornal.empleado?.nombre ?: "",
             tareaNombre = savedJornal.tarea?.nombre ?: "",
             jornales = savedJornal.jornales,
-            variedadNombre = savedJornal.variedad?.nombre ?: ""
+            variedadNombre = savedJornal.variedad?.nombre ?: "",
+            empleadoId = jornal.empleado?.id ?: 0,
+            variedadId = jornal.variedad?.id ?: 0,
+            tareaId = jornal.tarea?.id ?: 0,
         )
     }
 
@@ -83,7 +86,10 @@ class JornalService(
             empleadoNombre = updatedJornal.empleado?.nombre ?: "",
             tareaNombre = updatedJornal.tarea?.nombre ?: "",
             jornales = updatedJornal.jornales,
-            variedadNombre = updatedJornal.variedad?.nombre ?: ""
+            variedadNombre = updatedJornal.variedad?.nombre ?: "",
+            empleadoId = jornal.empleado?.id ?: 0,
+            variedadId = jornal.variedad?.id ?: 0,
+            tareaId = jornal.tarea?.id ?: 0,
         )
     }
 
@@ -104,7 +110,10 @@ class JornalService(
                 empleadoNombre = jornal.empleado?.nombre ?: "",
                 tareaNombre = jornal.tarea?.nombre ?: "",
                 jornales = jornal.jornales,
-                variedadNombre = jornal.variedad?.nombre ?: ""
+                variedadNombre = jornal.variedad?.nombre ?: "",
+                empleadoId = jornal.empleado?.id ?: 0,
+                variedadId = jornal.variedad?.id ?: 0,
+                tareaId = jornal.tarea?.id ?: 0,
             )
         }
     }

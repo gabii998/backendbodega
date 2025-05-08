@@ -1,5 +1,6 @@
 package com.bodega.api.controller
 
+import com.bodega.api.dto.DetalleVariedadDto
 import com.bodega.api.dto.ReporteCuartelDto
 import com.bodega.api.dto.ReporteVariedadDto
 import com.bodega.api.service.ReporteService
@@ -24,5 +25,15 @@ class ReporteController(private val reporteService: ReporteService) {
     ): ResponseEntity<ReporteVariedadDto> {
         val reporte = reporteService.generarReportePorAnioCuartelVariedad(anio, cuartelId, variedadId)
         return ResponseEntity.ok(reporte)
+    }
+
+    @GetMapping("/anio/{anio}/cuartel/{cuartelId}/variedad/{variedadId}/detalle")
+    fun obtenerDetalleVariedad(
+        @PathVariable anio: Int,
+        @PathVariable cuartelId: Int,
+        @PathVariable variedadId: Int
+    ): ResponseEntity<DetalleVariedadDto> {
+        val detalle = reporteService.obtenerDetalleVariedad(anio, cuartelId, variedadId)
+        return ResponseEntity.ok(detalle)
     }
 }
