@@ -20,6 +20,14 @@ class VariedadService(private val variedadRepository: VariedadUvaRepository) {
     }
 
     @Transactional
+    fun eliminarVariedad(idVariedad:Int) {
+        if (!variedadRepository.existsById(idVariedad)) {
+            throw EntityNotFoundException("Variedad no encontrada con ID: $idVariedad")
+        }
+        return variedadRepository.deleteById(idVariedad)
+    }
+
+    @Transactional
     fun editarVariedad(id: Int, variedadDto: VariedadDto): VariedadUva {
         val variedad = variedadRepository.findById(id)
             .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: $id") }

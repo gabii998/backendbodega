@@ -26,6 +26,14 @@ class VariedadController(private val variedadService: VariedadService) {
         return ResponseEntity.ok(variedad)
     }
 
+    @DeleteMapping("/{id}")
+    fun eliminarVariedad(
+        @PathVariable id: Int
+    ): ResponseEntity<Void> {
+        variedadService.eliminarVariedad(id)
+        return ResponseEntity.noContent().build()
+    }
+
     @GetMapping
     fun listarVariedades(): ResponseEntity<List<VariedadUva>> {
         val variedades = variedadService.listarVariedades()
