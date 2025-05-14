@@ -86,7 +86,8 @@ class CuartelService(
             val variedadCuartel = VariedadCuartel(
                 variedad = variedad,
                 superficie = variedadDto.superficie,
-                cuartel = cuartel
+                cuartel = cuartel,
+                hileras = variedadDto.hileras
             )
 
             variedadCuartelRepository.save(variedadCuartel)
@@ -143,7 +144,8 @@ class CuartelService(
             sistema = cuartel.sistema.name,
             superficieTotal = superficieTotal,
             encargadoNombre = cuartel.encargado?.nombre ?: "",
-            variedades = variedadesInfo
+            variedades = variedadesInfo,
+            hileras = variedades.sumOf { it.hileras }
         )
     }
 }

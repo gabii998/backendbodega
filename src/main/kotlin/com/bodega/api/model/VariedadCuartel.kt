@@ -17,6 +17,9 @@ data class VariedadCuartel(
     @Column(name = "superficie")
     var superficie: Double = 0.0,
 
+    @Column(name = "hileras")
+    var hileras: Int = 0,
+
     @ManyToOne
     @JoinColumn(name = "idCuartel")
     var cuartel: Cuartel? = null

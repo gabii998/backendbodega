@@ -5,6 +5,7 @@ data class CuartelResponse(
     val nombre: String,
     val sistema: String,
     val superficieTotal: Double,
+    val hileras:Int,
     val encargadoNombre: String,
     val variedades: List<VariedadInfoDto>
 )
