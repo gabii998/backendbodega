@@ -1,14 +1,9 @@
 package com.bodega.api.service
 
-import com.bodega.api.dto.DetalleTareaDto
-import com.bodega.api.dto.DetalleVariedadDto
-import com.bodega.api.dto.ReporteCuartelDto
-import com.bodega.api.dto.ReporteVariedadDto
+import com.bodega.api.dto.*
+import com.bodega.api.model.IndicadorReporte
 import com.bodega.api.model.TipoTarea
-import com.bodega.api.repository.CuartelRepository
-import com.bodega.api.repository.JornalRepository
-import com.bodega.api.repository.VariedadCuartelRepository
-import com.bodega.api.repository.VariedadUvaRepository
+import com.bodega.api.repository.*
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -18,7 +13,8 @@ class ReporteService(
     private val cuartelRepository: CuartelRepository,
     private val jornalRepository: JornalRepository,
     private val variedadCuartelRepository: VariedadCuartelRepository,
-    private val variedadRepository:VariedadUvaRepository
+    private val variedadRepository:VariedadUvaRepository,
+    private val indicadorReporteRepository: IndicadorReporteRepository
 ) {
 
     fun generarReportePorAnioCuartelVariedad(ano: Int, cuartelId: Int, variedadId: Int): ReporteVariedadDto {
@@ -165,8 +161,194 @@ class ReporteService(
         )
     }
 
-    fun listarReportesPorAnio(ano: Int): List<ReporteCuartelDto> {
-        return cuartelRepository.findAll().map { cuartel ->
+    fun actualizarIndicadoresCuartel(ano: Int, cuartelId: Int, indicadores: IndicadoresDto): IndicadoresDto {
+        val cuartel = cuartelRepository.findById(cuartelId)
+            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
+
+        // Buscar el indicador existente o crear uno nuevo
+        val indicadorExistente = indicadorReporteRepository.findByCuartelAndFechaCarga(
+            cuartel,
+            LocalDateTime.of(ano, 1, 1, 0, 0)
+        ).firstOrNull()
+
+        val indicadorReporte = indicadorExistente ?: IndicadorReporte(
+            cuartel = cuartel,
+            fechaCarga = LocalDateTime.of(ano, 1, 1, 0, 0)
+        )
+
+        // Actualizar los valores
+        indicadorReporte.estructura = indicadores.estructura.toString()
+        indicadorReporte.totalProductivo = indicadores.totalProductivo.toString()
+        indicadorReporte.jornalesNoProductivos = indicadores.jornalesNoProductivos.toString()
+        indicadorReporte.jornalesPagados = indicadores.jornalesPagados.toString()
+        indicadorReporte.rendimiento = indicadores.rendimiento.toString()
+        // Nota: Si necesitas almacenar quintalPorJornal, podrías agregarlo al modelo IndicadorReporte
+
+        // Guardar los cambios
+        val indicadorGuardado = indicadorReporteRepository.save(indicadorReporte)
+
+        // Retornar el DTO actualizado
+        return IndicadoresDto(
+            estructura = indicadorGuardado.estructura.toDoubleOrNull() ?: 0.0,
+            totalProductivo = indicadorGuardado.totalProductivo.toDoubleOrNull() ?: 0.0,
+            jornalesNoProductivos = indicadorGuardado.jornalesNoProductivos.toDoubleOrNull() ?: 0.0,
+            jornalesPagados = indicadorGuardado.jornalesPagados.toDoubleOrNull() ?: 0.0,
+            rendimiento = indicadorGuardado.rendimiento.toDoubleOrNull() ?: 0.0,
+            quintalPorJornal = indicadores.quintalPorJornal // Mantener el valor recibido
+        )
+    }
+
+    fun actualizarIndicadoresVariedad(ano: Int, cuartelId: Int, variedadId: Int, indicadores: IndicadoresDto): IndicadoresDto {
+        val cuartel = cuartelRepository.findById(cuartelId)
+            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
+
+        val variedad = variedadRepository.findById(variedadId)
+            .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: $variedadId") }
+
+        // Verificar que la variedad pertenezca al cuartel
+        val variedadCuartel = variedadCuartelRepository.findByCuartelAndVariedad(cuartel, variedad)
+            .orElseThrow { EntityNotFoundException("La variedad no está asociada con este cuartel") }
+
+        // Buscar el indicador existente o crear uno nuevo
+        val indicadorExistente = indicadorReporteRepository.findByCuartelAndVariedadAndFechaCargaBetween(
+            cuartel,
+            variedad,
+            LocalDateTime.of(ano, 1, 1, 0, 0),
+            LocalDateTime.of(ano, 12, 31, 23, 59, 59)
+        ).firstOrNull()
+
+        val indicadorReporte = indicadorExistente ?: IndicadorReporte(
+            cuartel = cuartel,
+            variedad = variedad,
+            fechaCarga = LocalDateTime.of(ano, 1, 1, 0, 0)
+        )
+
+        // Actualizar los valores
+        indicadorReporte.estructura = indicadores.estructura.toString()
+        indicadorReporte.totalProductivo = indicadores.totalProductivo.toString()
+        indicadorReporte.jornalesNoProductivos = indicadores.jornalesNoProductivos.toString()
+        indicadorReporte.jornalesPagados = indicadores.jornalesPagados.toString()
+        indicadorReporte.rendimiento = indicadores.rendimiento.toString()
+
+        // Guardar los cambios
+        val indicadorGuardado = indicadorReporteRepository.save(indicadorReporte)
+
+        // Retornar el DTO actualizado
+        return IndicadoresDto(
+            estructura = indicadorGuardado.estructura.toDoubleOrNull() ?: 0.0,
+            totalProductivo = indicadorGuardado.totalProductivo.toDoubleOrNull() ?: 0.0,
+            jornalesNoProductivos = indicadorGuardado.jornalesNoProductivos.toDoubleOrNull() ?: 0.0,
+            jornalesPagados = indicadorGuardado.jornalesPagados.toDoubleOrNull() ?: 0.0,
+            rendimiento = indicadorGuardado.rendimiento.toDoubleOrNull() ?: 0.0,
+            quintalPorJornal = indicadores.quintalPorJornal
+        )
+    }
+
+    fun obtenerIndicadoresCuartel(ano: Int, cuartelId: Int): IndicadoresDto {
+        val cuartel = cuartelRepository.findById(cuartelId)
+            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
+
+        // Buscar indicadores existentes
+        val indicadorExistente = indicadorReporteRepository.findByCuartelAndFechaCarga(
+            cuartel,
+            LocalDateTime.of(ano, 1, 1, 0, 0)
+        ).firstOrNull()
+
+        return if (indicadorExistente != null) {
+            // Retornar indicadores existentes
+            IndicadoresDto(
+                estructura = indicadorExistente.estructura.toDoubleOrNull() ?: 0.0,
+                totalProductivo = indicadorExistente.totalProductivo.toDoubleOrNull() ?: 0.0,
+                jornalesNoProductivos = indicadorExistente.jornalesNoProductivos.toDoubleOrNull() ?: 0.0,
+                jornalesPagados = indicadorExistente.jornalesPagados.toDoubleOrNull() ?: 0.0,
+                rendimiento = indicadorExistente.rendimiento.toDoubleOrNull() ?: 0.0,
+                quintalPorJornal = 0.0 // O desde el campo si lo agregaste al modelo
+            )
+        } else {
+            // Si no existen, calcular valores por defecto
+            val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(
+                LocalDateTime.of(ano, 1, 1, 0, 0),
+                LocalDateTime.of(ano, 12, 31, 23, 59, 59)
+            )
+            val totalJornales = jornalesCuartel.sumOf { it.jornales }
+            val variedadesCuartel = variedadCuartelRepository.findByCuartel(cuartel)
+            val superficieTotal = variedadesCuartel.sumOf { it.superficie }
+            val rendimiento = if (superficieTotal > 0) totalJornales / superficieTotal else 0.0
+
+            // Calcular indicadores por defecto
+            val estructura = totalJornales * 0.02 // 2% para estructura
+            val jornalesNoProductivos = totalJornales * 0.06 // 6% no productivos
+            val jornalesPagados = totalJornales + jornalesNoProductivos + estructura
+
+            IndicadoresDto(
+                estructura = estructura,
+                totalProductivo = totalJornales,
+                jornalesNoProductivos = jornalesNoProductivos,
+                jornalesPagados = jornalesPagados,
+                rendimiento = rendimiento,
+                quintalPorJornal = if (totalJornales > 0) rendimiento / (totalJornales / superficieTotal) else 0.0
+            )
+        }
+    }
+
+    fun obtenerIndicadoresVariedad(ano: Int, cuartelId: Int, variedadId: Int): IndicadoresDto {
+        val cuartel = cuartelRepository.findById(cuartelId)
+            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
+
+        val variedad = variedadRepository.findById(variedadId)
+            .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: $variedadId") }
+
+        // Buscar indicadores existentes
+        val indicadorExistente = indicadorReporteRepository.findByCuartelAndVariedadAndFechaCargaBetween(
+            cuartel,
+            variedad,
+            LocalDateTime.of(ano, 1, 1, 0, 0),
+            LocalDateTime.of(ano, 12, 31, 23, 59, 59)
+        ).firstOrNull()
+
+        return if (indicadorExistente != null) {
+            // Retornar indicadores existentes
+            IndicadoresDto(
+                estructura = indicadorExistente.estructura.toDoubleOrNull() ?: 0.0,
+                totalProductivo = indicadorExistente.totalProductivo.toDoubleOrNull() ?: 0.0,
+                jornalesNoProductivos = indicadorExistente.jornalesNoProductivos.toDoubleOrNull() ?: 0.0,
+                jornalesPagados = indicadorExistente.jornalesPagados.toDoubleOrNull() ?: 0.0,
+                rendimiento = indicadorExistente.rendimiento.toDoubleOrNull() ?: 0.0,
+                quintalPorJornal = 0.0
+            )
+        } else {
+            // Si no existen, calcular valores por defecto
+            val variedadCuartel = variedadCuartelRepository.findByCuartelAndVariedad(cuartel, variedad)
+                .orElseThrow { EntityNotFoundException("La variedad no está asociada con este cuartel") }
+
+            val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
+                variedad.id,
+                LocalDateTime.of(ano, 1, 1, 0, 0),
+                LocalDateTime.of(ano, 12, 31, 23, 59, 59)
+            )
+
+            val totalJornales = jornalesVariedad.sumOf { it.jornales }
+            val superficie = variedadCuartel.superficie
+            val rendimiento = if (superficie > 0) totalJornales / superficie else 0.0
+
+            // Calcular indicadores por defecto
+            val estructura = totalJornales * 0.02
+            val jornalesNoProductivos = totalJornales * 0.06
+            val jornalesPagados = totalJornales + jornalesNoProductivos + estructura
+
+            IndicadoresDto(
+                estructura = estructura,
+                totalProductivo = totalJornales,
+                jornalesNoProductivos = jornalesNoProductivos,
+                jornalesPagados = jornalesPagados,
+                rendimiento = rendimiento,
+                quintalPorJornal = if (totalJornales > 0) rendimiento / (totalJornales / superficie) else 0.0
+            )
+        }
+    }
+
+    fun listarReportesPorAnio(ano: Int,fincaId:Int): List<ReporteCuartelDto> {
+        return cuartelRepository.findAllByFincaId(fincaId).map { cuartel ->
             generarReportePorAnioCuartel(ano, cuartel.id)
         }
     }

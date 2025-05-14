@@ -23,6 +23,9 @@ data class IndicadorReporte(
     @Column(name = "jornalesPagados")
     var jornalesPagados: String = "",
 
+    @Column(name = "quintalPorJornal")
+    var quintalPorJornal: String = "",
+
     @Column(name = "rendimiento")
     var rendimiento: String = "",
 
