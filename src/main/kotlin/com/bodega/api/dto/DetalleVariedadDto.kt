@@ -1,9 +1,10 @@
 package com.bodega.api.dto
 
 data class DetalleVariedadDto(
-    val idVariedad: Int,
-    val nombreVariedad: String,
+    val idVariedad: Int?,
+    val nombreVariedad: String?,
     val superficie: Double,
+    val hileras:Int,
     val jornalesTotales: Double,
     val jornalesManuales: Double,
     val jornalesMecanicos: Double,

@@ -1,5 +1,6 @@
 package com.bodega.api.repository
 
+import com.bodega.api.dto.JornalResponse
 import com.bodega.api.model.Cuartel
 import com.bodega.api.model.Empleado
 import com.bodega.api.model.Jornal
@@ -25,11 +26,15 @@ interface JornalRepository : JpaRepository<Jornal, Int> {
         @Param("fin") fin: LocalDateTime
     ): List<Jornal>
 
-    @Query("SELECT j FROM Jornal j WHERE j.fecha BETWEEN :inicio AND :fin")
+    @Query("SELECT j FROM Jornal j WHERE j.cuartel.id = :idCuartel AND j.fecha BETWEEN :inicio AND :fin")
     fun findByCuartelAndFechaBetween(
+        @Param("idCuartel") idCuartel: Int,
         @Param("inicio") inicio: LocalDateTime,
         @Param("fin") fin: LocalDateTime
     ): List<Jornal>
+
+
+    fun findAllByCuartelId(cuartelId:Long): List<Jornal>
 
 
 }

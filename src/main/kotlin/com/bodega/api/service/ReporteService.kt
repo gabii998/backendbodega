@@ -43,7 +43,66 @@ class ReporteService(
             variedadNombre = variedad.nombre,
             superficie = variedadCuartel.superficie,
             jornales = totalJornalesVariedad,
-            rendimiento = rendimientoVariedad
+            rendimiento = rendimientoVariedad,
+            hileras = variedadCuartel.hileras,
+        )
+    }
+
+    fun obtenerDetalleCuartel(ano: Int, cuartelId: Int): DetalleVariedadDto {
+        val cuartel = cuartelRepository.findById(cuartelId)
+            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
+
+        val variedades = variedadCuartelRepository.findByCuartel(cuartel)
+
+        // Obtener todos los jornales para esta variedad en el período
+        val jornalesCuartel = jornalRepository.findAllByCuartelId(cuartel.id.toLong())
+
+        val totalJornalesVariedad = jornalesCuartel.sumOf { it.jornales }
+
+        // Agrupar por tipo de tarea (manual o mecánica)
+        val jornalesPorTarea = jornalesCuartel.groupBy { it.tarea }
+        // Calcular jornales manuales y mecánicos
+        var jornalesManuales = 0.0
+        var jornalesMecanicos = 0.0
+        val tareasManuales = mutableListOf<DetalleTareaDto>()
+        val tareasMecanicas = mutableListOf<DetalleTareaDto>()
+
+        // Agrupar por tareas
+        jornalesPorTarea.forEach { (tarea, jornales) ->
+            if (tarea == null) return@forEach
+
+            val totalJornalesTarea = jornales.sumOf { it.jornales }
+
+            val detalleTarea = DetalleTareaDto(
+                idTarea = tarea.id,
+                nombreTarea = tarea.nombre,
+                jornales = totalJornalesTarea,
+                tipo = tarea.tipo.name
+            )
+
+            if (tarea.tipo == TipoTarea.Manual) {
+                jornalesManuales += totalJornalesTarea
+                tareasManuales.add(detalleTarea)
+            } else {
+                jornalesMecanicos += totalJornalesTarea
+                tareasMecanicas.add(detalleTarea)
+            }
+        }
+
+        // Calcular rendimiento
+        val rendimiento = 0.0
+
+        return DetalleVariedadDto(
+            idVariedad = null,
+            nombreVariedad = null,
+            superficie = variedades.sumOf { it.superficie },
+            jornalesTotales = totalJornalesVariedad,
+            jornalesManuales = jornalesManuales,
+            jornalesMecanicos = jornalesMecanicos,
+            rendimiento = rendimiento,
+            tareasManuales = tareasManuales,
+            tareasMecanicas = tareasMecanicas,
+            hileras = variedades.sumOf { it.hileras }
         )
     }
 
@@ -112,7 +171,8 @@ class ReporteService(
             jornalesMecanicos = jornalesMecanicos,
             rendimiento = rendimiento,
             tareasManuales = tareasManuales,
-            tareasMecanicas = tareasMecanicas
+            tareasMecanicas = tareasMecanicas,
+            hileras = variedadCuartel.hileras
         )
     }
 
@@ -123,7 +183,7 @@ class ReporteService(
         val inicioAno = LocalDateTime.of(ano, 1, 1, 0, 0)
         val finAno = LocalDateTime.of(ano, 12, 31, 23, 59, 59)
 
-        val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(inicioAno, finAno)
+        val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(cuartelId,inicioAno, finAno)
         val jornalesTotales = jornalesCuartel.sumOf { it.jornales }
 
         val variedadesCuartel = variedadCuartelRepository.findByCuartel(cuartel)
@@ -146,7 +206,8 @@ class ReporteService(
                 variedadNombre = variedad.nombre,
                 superficie = vc.superficie,
                 jornales = totalJornalesVariedad,
-                rendimiento = rendimientoVariedad
+                rendimiento = rendimientoVariedad,
+                hileras = vc.hileras,
             )
         }
 
@@ -157,7 +218,8 @@ class ReporteService(
             fecha = ano.toString(),
             jornalesTotales = jornalesTotales,
             rendimiento = rendimiento,
-            variedades = reportesPorVariedad
+            variedades = reportesPorVariedad,
+            hileras = variedadesCuartel.sumOf { it.hileras },
         )
     }
 
@@ -206,8 +268,8 @@ class ReporteService(
             .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: $variedadId") }
 
         // Verificar que la variedad pertenezca al cuartel
-        val variedadCuartel = variedadCuartelRepository.findByCuartelAndVariedad(cuartel, variedad)
-            .orElseThrow { EntityNotFoundException("La variedad no está asociada con este cuartel") }
+//        val variedadCuartel = variedadCuartelRepository.findByCuartelAndVariedad(cuartel, variedad)
+//            .orElseThrow { EntityNotFoundException("La variedad no está asociada con este cuartel") }
 
         // Buscar el indicador existente o crear uno nuevo
         val indicadorExistente = indicadorReporteRepository.findByCuartelAndVariedadAndFechaCargaBetween(
@@ -255,38 +317,40 @@ class ReporteService(
         ).firstOrNull()
 
         return if (indicadorExistente != null) {
+            val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(
+                cuartelId,
+                LocalDateTime.of(ano, 1, 1, 0, 0),
+                LocalDateTime.of(ano, 12, 31, 23, 59, 59)
+            )
+            val totalJornales = jornalesCuartel.sumOf { it.jornales }
+            val rendimiento = indicadorExistente.rendimiento.toDoubleOrNull() ?: 0.0
+            val superfice = cuartel.variedades.sumOf { it.superficie }
             // Retornar indicadores existentes
             IndicadoresDto(
                 estructura = indicadorExistente.estructura.toDoubleOrNull() ?: 0.0,
                 totalProductivo = indicadorExistente.totalProductivo.toDoubleOrNull() ?: 0.0,
                 jornalesNoProductivos = indicadorExistente.jornalesNoProductivos.toDoubleOrNull() ?: 0.0,
                 jornalesPagados = indicadorExistente.jornalesPagados.toDoubleOrNull() ?: 0.0,
-                rendimiento = indicadorExistente.rendimiento.toDoubleOrNull() ?: 0.0,
-                quintalPorJornal = 0.0 // O desde el campo si lo agregaste al modelo
+                rendimiento = rendimiento,
+                quintalPorJornal = if (totalJornales > 0) rendimiento / (totalJornales / superfice) else 0.0
             )
         } else {
             // Si no existen, calcular valores por defecto
             val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(
+                cuartelId,
                 LocalDateTime.of(ano, 1, 1, 0, 0),
                 LocalDateTime.of(ano, 12, 31, 23, 59, 59)
             )
             val totalJornales = jornalesCuartel.sumOf { it.jornales }
-            val variedadesCuartel = variedadCuartelRepository.findByCuartel(cuartel)
-            val superficieTotal = variedadesCuartel.sumOf { it.superficie }
-            val rendimiento = if (superficieTotal > 0) totalJornales / superficieTotal else 0.0
-
-            // Calcular indicadores por defecto
-            val estructura = totalJornales * 0.02 // 2% para estructura
-            val jornalesNoProductivos = totalJornales * 0.06 // 6% no productivos
-            val jornalesPagados = totalJornales + jornalesNoProductivos + estructura
+            val rendimiento = 0.0
 
             IndicadoresDto(
-                estructura = estructura,
+                estructura = 0.0,
                 totalProductivo = totalJornales,
-                jornalesNoProductivos = jornalesNoProductivos,
-                jornalesPagados = jornalesPagados,
+                jornalesNoProductivos = 0.0,
+                jornalesPagados = 0.0,
                 rendimiento = rendimiento,
-                quintalPorJornal = if (totalJornales > 0) rendimiento / (totalJornales / superficieTotal) else 0.0
+                quintalPorJornal = 0.0
             )
         }
     }

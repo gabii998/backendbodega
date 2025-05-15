@@ -4,6 +4,7 @@ data class ReporteCuartelDto(
     val cuartelId: Int,
     val cuartelNombre: String,
     val superficie: Double,
+    val hileras:Int,
     val fecha: String,
     val jornalesTotales: Double,
     val rendimiento: Double,
@@ -14,6 +15,7 @@ data class ReporteVariedadDto(
     val variedadId: Int,
     val variedadNombre: String,
     val superficie: Double,
+    val hileras:Int,
     val jornales: Double,
     val rendimiento: Double
 )

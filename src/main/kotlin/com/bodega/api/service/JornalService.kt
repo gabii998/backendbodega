@@ -109,8 +109,8 @@ class JornalService(
         jornalRepository.deleteById(id)
     }
 
-    fun listarJornales(): List<JornalResponse> {
-        return jornalRepository.findAll().map { jornal ->
+    fun listarJornales(cuartelId:Int): List<JornalResponse> {
+        return jornalRepository.findAllByCuartelId(cuartelId.toLong()).map { jornal ->
             JornalResponse(
                 id = jornal.id,
                 fecha = jornal.fecha,

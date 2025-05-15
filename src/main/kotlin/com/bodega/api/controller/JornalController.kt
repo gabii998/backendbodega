@@ -46,9 +46,9 @@ class JornalController(
         return ResponseEntity.noContent().build()
     }
 
-    @GetMapping
-    fun listarJornales(): ResponseEntity<List<JornalResponse>> {
-        val jornales = jornalService.listarJornales()
+    @GetMapping("/{cuartelId}")
+    fun listarJornales(@PathVariable cuartelId:Int): ResponseEntity<List<JornalResponse>> {
+        val jornales = jornalService.listarJornales(cuartelId)
         return ResponseEntity.ok(jornales)
     }
 }
