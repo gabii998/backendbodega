@@ -1,16 +1,5 @@
 package com.bodega.api.dto
 
-data class ReporteCuartelDto(
-    val cuartelId: Int,
-    val cuartelNombre: String,
-    val superficie: Double,
-    val hileras:Int,
-    val fecha: String,
-    val jornalesTotales: Double,
-    val rendimiento: Double,
-    val variedades: List<ReporteVariedadDto>
-)
-
 data class ReporteVariedadDto(
     val variedadId: Int,
     val variedadNombre: String,
@@ -18,4 +7,22 @@ data class ReporteVariedadDto(
     val hileras:Int,
     val jornales: Double,
     val rendimiento: Double
+)
+
+data class ReporteDto(
+    val id: Int,
+    val nombre: String,
+    val anio:String,
+    val superficie:Double,
+    val hileras:Int,
+    val jornales:Double,
+    val rendimiento:Double,
+    val esVariedad:Boolean,
+    val cuartel:CuartelReporte? = null,
+    val reporteVariedades:List<ReporteDto>? = null
+)
+
+data class CuartelReporte(
+    val id: Int,
+    val nombre: String,
 )

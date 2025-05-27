@@ -43,8 +43,8 @@ class CuartelService(
 
         // Asociar variedades al cuartel
         val variedades = cuartelDto.variedades.map { variedadDto ->
-            val variedad = variedadRepository.findById(variedadDto.variedadId)
-                .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: ${variedadDto.variedadId}") }
+            val variedad = variedadRepository.findById(variedadDto.id)
+                .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: ${variedadDto.id}") }
 
             val variedadCuartel = VariedadCuartel(
                 variedad = variedad,
@@ -80,8 +80,8 @@ class CuartelService(
 
         // Agregar nuevas variedades
         cuartelDto.variedades.forEach { variedadDto ->
-            val variedad = variedadRepository.findById(variedadDto.variedadId)
-                .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: ${variedadDto.variedadId}") }
+            val variedad = variedadRepository.findById(variedadDto.id)
+                .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: ${variedadDto.id}") }
 
             val variedadCuartel = VariedadCuartel(
                 variedad = variedad,
@@ -134,7 +134,8 @@ class CuartelService(
             VariedadInfoDto(
                 id = vc.variedad?.id ?: 0,
                 nombre = vc.variedad?.nombre ?: "",
-                superficie = vc.superficie
+                superficie = vc.superficie,
+                hileras = vc.hileras,
             )
         }
 
@@ -145,7 +146,8 @@ class CuartelService(
             superficieTotal = superficieTotal,
             encargadoNombre = cuartel.encargado?.nombre ?: "",
             variedades = variedadesInfo,
-            hileras = variedades.sumOf { it.hileras }
+            hileras = variedades.sumOf { it.hileras },
+            encargadoId = cuartel.encargado?.id ?: -1,
         )
     }
 }

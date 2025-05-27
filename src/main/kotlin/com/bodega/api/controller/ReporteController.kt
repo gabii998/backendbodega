@@ -1,9 +1,6 @@
 package com.bodega.api.controller
 
-import com.bodega.api.dto.DetalleVariedadDto
-import com.bodega.api.dto.IndicadoresDto
-import com.bodega.api.dto.ReporteCuartelDto
-import com.bodega.api.dto.ReporteVariedadDto
+import com.bodega.api.dto.*
 import com.bodega.api.service.ReporteService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -13,19 +10,9 @@ import org.springframework.web.bind.annotation.*
 class ReporteController(private val reporteService: ReporteService) {
 
     @GetMapping("/anio/{anio}/finca/{fincaId}")
-    fun generarReportePorAnio(@PathVariable anio: Int,@PathVariable fincaId:Int): ResponseEntity<List<ReporteCuartelDto>> {
+    fun generarReportePorAnio(@PathVariable anio: Int,@PathVariable fincaId:Int): ResponseEntity<List<ReporteDto>> {
         val reportes = reporteService.listarReportesPorAnio(anio,fincaId)
         return ResponseEntity.ok(reportes)
-    }
-
-    @GetMapping("/anio/{anio}/cuartel/{cuartelId}/variedad/{variedadId}")
-    fun generarReportePorAnioCuartelVariedad(
-        @PathVariable anio: Int,
-        @PathVariable cuartelId: Int,
-        @PathVariable variedadId: Int
-    ): ResponseEntity<ReporteVariedadDto> {
-        val reporte = reporteService.generarReportePorAnioCuartelVariedad(anio, cuartelId, variedadId)
-        return ResponseEntity.ok(reporte)
     }
 
     @GetMapping("/anio/{anio}/cuartel/{cuartelId}/variedad/{variedadId}/detalle")

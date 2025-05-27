@@ -6,6 +6,7 @@ data class CuartelResponse(
     val sistema: String,
     val superficieTotal: Double,
     val hileras:Int,
+    val encargadoId:Int,
     val encargadoNombre: String,
     val variedades: List<VariedadInfoDto>
 )
@@ -13,5 +14,6 @@ data class CuartelResponse(
 data class VariedadInfoDto(
     val id: Int,
     val nombre: String,
-    val superficie: Double
+    val superficie: Double,
+    val hileras: Int
 )

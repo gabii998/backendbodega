@@ -1,8 +1,8 @@
 package com.bodega.api.service
 
+import com.bodega.api.Util
 import com.bodega.api.dto.*
-import com.bodega.api.model.IndicadorReporte
-import com.bodega.api.model.TipoTarea
+import com.bodega.api.model.*
 import com.bodega.api.repository.*
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
@@ -16,38 +16,58 @@ class ReporteService(
     private val variedadRepository:VariedadUvaRepository,
     private val indicadorReporteRepository: IndicadorReporteRepository
 ) {
-
-    fun generarReportePorAnioCuartelVariedad(ano: Int, cuartelId: Int, variedadId: Int): ReporteVariedadDto {
-        // Implementación existente...
+    //Listado de reportes
+    fun generarReportePorAnioCuartel(ano: Int, cuartelId: Int): ReporteDto {
         val cuartel = cuartelRepository.findById(cuartelId)
             .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
-
-        val variedad = variedadRepository.findById(variedadId)
-            .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: $variedadId") }
 
         val inicioAno = LocalDateTime.of(ano, 1, 1, 0, 0)
         val finAno = LocalDateTime.of(ano, 12, 31, 23, 59, 59)
 
-        val variedadCuartel = variedadCuartelRepository.findByCuartelAndVariedad(cuartel, variedad)
-            .orElseThrow { EntityNotFoundException("No existe relación entre el cuartel $cuartelId y la variedad $variedadId") }
+        val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(cuartelId,inicioAno, finAno)
+        val jornalesTotales = jornalesCuartel.sumOf { it.jornales }
 
-        val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
-             variedad.id, inicioAno, finAno
-        )
+        val variedadesCuartel = variedadCuartelRepository.findByCuartel(cuartel)
+        val superficieTotal = variedadesCuartel.sumOf { it.superficie }
 
-        val totalJornalesVariedad = jornalesVariedad.sumOf { it.jornales }
-        val rendimientoVariedad = 0.0
+        // Generar reporte por variedad
+        val reportesPorVariedad = variedadesCuartel.map { vc ->
+            val variedad = vc.variedad ?: throw EntityNotFoundException("Variedad no encontrada")
+            val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
+                variedad.id, inicioAno, finAno
+            )
+            val indicadorReporte = getIndicadorVariedad(cuartel, variedad, ano)
+            val totalJornalesVariedad = jornalesVariedad.sumOf { it.jornales }
+            val rendimientoVariedad = indicadorReporte?.rendimiento?.toDoubleOrNull() ?: 0.00
 
-        return ReporteVariedadDto(
-            variedadId = variedad.id,
-            variedadNombre = variedad.nombre,
-            superficie = variedadCuartel.superficie,
-            jornales = totalJornalesVariedad,
-            rendimiento = rendimientoVariedad,
-            hileras = variedadCuartel.hileras,
+            ReporteDto(
+                id = variedad.id,
+                nombre = variedad.nombre,
+                superficie = vc.superficie,
+                jornales = totalJornalesVariedad,
+                rendimiento = rendimientoVariedad,
+                esVariedad = true,
+                hileras = vc.hileras,
+                cuartel = CuartelReporte(
+                    id = cuartel.id,
+                    nombre = cuartel.nombre,
+                ),
+                anio = ano.toString()
+            )
+        }
+        return ReporteDto(
+            id = cuartel.id,
+            nombre = cuartel.nombre,
+            superficie = superficieTotal,
+            jornales = jornalesTotales,
+            hileras = variedadesCuartel.sumOf { it.hileras },
+            reporteVariedades = reportesPorVariedad,
+            rendimiento = getIndicadorCuartel(cuartel,ano)?.rendimiento?.toDoubleOrNull() ?: 0.00,
+            esVariedad = false,
+            anio = ano.toString()
         )
     }
-
+    //Detalles
     fun obtenerDetalleCuartel(ano: Int, cuartelId: Int): DetalleVariedadDto {
         val cuartel = cuartelRepository.findById(cuartelId)
             .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
@@ -105,7 +125,6 @@ class ReporteService(
             hileras = variedades.sumOf { it.hileras }
         )
     }
-
     fun obtenerDetalleVariedad(ano: Int, cuartelId: Int, variedadId: Int): DetalleVariedadDto {
         val cuartel = cuartelRepository.findById(cuartelId)
             .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
@@ -113,8 +132,8 @@ class ReporteService(
         val variedad = variedadRepository.findById(variedadId)
             .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: $variedadId") }
 
-        val inicioAno = LocalDateTime.of(ano, 1, 1, 0, 0)
-        val finAno = LocalDateTime.of(ano, 12, 31, 23, 59, 59)
+        val inicioAno = Util.getInicioAnio(ano)
+        val finAno = Util.getFinAno(ano)
 
         val variedadCuartel = variedadCuartelRepository.findByCuartelAndVariedad(cuartel, variedad)
             .orElseThrow { EntityNotFoundException("No existe relación entre el cuartel $cuartelId y la variedad $variedadId") }
@@ -175,54 +194,7 @@ class ReporteService(
             hileras = variedadCuartel.hileras
         )
     }
-
-    fun generarReportePorAnioCuartel(ano: Int, cuartelId: Int): ReporteCuartelDto {
-        val cuartel = cuartelRepository.findById(cuartelId)
-            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
-
-        val inicioAno = LocalDateTime.of(ano, 1, 1, 0, 0)
-        val finAno = LocalDateTime.of(ano, 12, 31, 23, 59, 59)
-
-        val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(cuartelId,inicioAno, finAno)
-        val jornalesTotales = jornalesCuartel.sumOf { it.jornales }
-
-        val variedadesCuartel = variedadCuartelRepository.findByCuartel(cuartel)
-        val superficieTotal = variedadesCuartel.sumOf { it.superficie }
-
-        // Calcular rendimiento (jornales por hectárea)
-        val rendimiento = 0.0
-
-        // Generar reporte por variedad
-        val reportesPorVariedad = variedadesCuartel.map { vc ->
-            val variedad = vc.variedad ?: throw EntityNotFoundException("Variedad no encontrada")
-            val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
-                variedad.id, inicioAno, finAno
-            )
-            val totalJornalesVariedad = jornalesVariedad.sumOf { it.jornales }
-            val rendimientoVariedad = if (vc.superficie > 0) totalJornalesVariedad / vc.superficie else 0.0
-
-            ReporteVariedadDto(
-                variedadId = variedad.id,
-                variedadNombre = variedad.nombre,
-                superficie = vc.superficie,
-                jornales = totalJornalesVariedad,
-                rendimiento = rendimientoVariedad,
-                hileras = vc.hileras,
-            )
-        }
-
-        return ReporteCuartelDto(
-            cuartelId = cuartel.id,
-            cuartelNombre = cuartel.nombre,
-            superficie = superficieTotal,
-            fecha = ano.toString(),
-            jornalesTotales = jornalesTotales,
-            rendimiento = rendimiento,
-            variedades = reportesPorVariedad,
-            hileras = variedadesCuartel.sumOf { it.hileras },
-        )
-    }
-
+    //Actualizar indicadores
     fun actualizarIndicadoresCuartel(ano: Int, cuartelId: Int, indicadores: IndicadoresDto): IndicadoresDto {
         val cuartel = cuartelRepository.findById(cuartelId)
             .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
@@ -259,17 +231,12 @@ class ReporteService(
             quintalPorJornal = indicadores.quintalPorJornal // Mantener el valor recibido
         )
     }
-
     fun actualizarIndicadoresVariedad(ano: Int, cuartelId: Int, variedadId: Int, indicadores: IndicadoresDto): IndicadoresDto {
         val cuartel = cuartelRepository.findById(cuartelId)
             .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
 
         val variedad = variedadRepository.findById(variedadId)
             .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: $variedadId") }
-
-        // Verificar que la variedad pertenezca al cuartel
-//        val variedadCuartel = variedadCuartelRepository.findByCuartelAndVariedad(cuartel, variedad)
-//            .orElseThrow { EntityNotFoundException("La variedad no está asociada con este cuartel") }
 
         // Buscar el indicador existente o crear uno nuevo
         val indicadorExistente = indicadorReporteRepository.findByCuartelAndVariedadAndFechaCargaBetween(
@@ -305,7 +272,7 @@ class ReporteService(
             quintalPorJornal = indicadores.quintalPorJornal
         )
     }
-
+    //Obtener indicadores
     fun obtenerIndicadoresCuartel(ano: Int, cuartelId: Int): IndicadoresDto {
         val cuartel = cuartelRepository.findById(cuartelId)
             .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
@@ -354,7 +321,6 @@ class ReporteService(
             )
         }
     }
-
     fun obtenerIndicadoresVariedad(ano: Int, cuartelId: Int, variedadId: Int): IndicadoresDto {
         val cuartel = cuartelRepository.findById(cuartelId)
             .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $cuartelId") }
@@ -363,12 +329,7 @@ class ReporteService(
             .orElseThrow { EntityNotFoundException("Variedad no encontrada con ID: $variedadId") }
 
         // Buscar indicadores existentes
-        val indicadorExistente = indicadorReporteRepository.findByCuartelAndVariedadAndFechaCargaBetween(
-            cuartel,
-            variedad,
-            LocalDateTime.of(ano, 1, 1, 0, 0),
-            LocalDateTime.of(ano, 12, 31, 23, 59, 59)
-        ).firstOrNull()
+        val indicadorExistente = getIndicadorVariedad(cuartel, variedad, ano)
 
         return if (indicadorExistente != null) {
             // Retornar indicadores existentes
@@ -411,9 +372,26 @@ class ReporteService(
         }
     }
 
-    fun listarReportesPorAnio(ano: Int,fincaId:Int): List<ReporteCuartelDto> {
+    fun listarReportesPorAnio(ano: Int,fincaId:Int): List<ReporteDto> {
         return cuartelRepository.findAllByFincaId(fincaId).map { cuartel ->
             generarReportePorAnioCuartel(ano, cuartel.id)
         }
+    }
+
+    private fun getIndicadorCuartel(cuartel: Cuartel,ano: Int):IndicadorReporte? {
+        return indicadorReporteRepository.findByCuartelAndFechaCargaBetween(
+            cuartel,
+            LocalDateTime.of(ano, 1, 1, 0, 0),
+            LocalDateTime.of(ano, 12, 31, 23, 59, 59)
+        ).firstOrNull()
+    }
+
+    private fun getIndicadorVariedad(cuartel:Cuartel, variedad:VariedadUva, ano: Int):IndicadorReporte? {
+        return indicadorReporteRepository.findByCuartelAndVariedadAndFechaCargaBetween(
+            cuartel,
+            variedad,
+            LocalDateTime.of(ano, 1, 1, 0, 0),
+            LocalDateTime.of(ano, 12, 31, 23, 59, 59)
+        ).firstOrNull()
     }
 }
