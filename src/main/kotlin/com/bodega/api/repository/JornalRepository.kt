@@ -18,9 +18,9 @@ interface JornalRepository : JpaRepository<Jornal, Int> {
     fun findByFechaBetween(inicio: LocalDateTime, fin: LocalDateTime): List<Jornal>
 
     // Consulta corregida para encontrar jornales por cuartel y rango de fechas
-    @Query("SELECT j FROM Jornal j WHERE j.variedad.id = :idVariedad AND j.fecha BETWEEN :inicio AND :fin")
+    @Query("SELECT j FROM Jornal j WHERE j.cuartel.id = :idCuartel AND j.variedad.id = :idVariedad AND j.fecha BETWEEN :inicio AND :fin")
     fun findByCuartelAndVariedadAndFechaBetween(
-        //@Param("cuartel") cuartel: Cuartel,
+        @Param("idCuartel") cuartelId: Int,
         @Param("idVariedad") idVariedad: Int,
         @Param("inicio") inicio: LocalDateTime,
         @Param("fin") fin: LocalDateTime
@@ -33,8 +33,8 @@ interface JornalRepository : JpaRepository<Jornal, Int> {
         @Param("fin") fin: LocalDateTime
     ): List<Jornal>
 
-
-    fun findAllByCuartelId(cuartelId:Long): List<Jornal>
+    @Query("SELECT j FROM Jornal j WHERE j.cuartel.id = :idCuartel")
+    fun findAllByCuartelId(@Param("idCuartel") cuartelId:Long): List<Jornal>
 
 
 }

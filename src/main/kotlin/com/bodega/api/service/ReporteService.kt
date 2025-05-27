@@ -24,16 +24,13 @@ class ReporteService(
         val inicioAno = LocalDateTime.of(ano, 1, 1, 0, 0)
         val finAno = LocalDateTime.of(ano, 12, 31, 23, 59, 59)
 
-        val jornalesCuartel = jornalRepository.findByCuartelAndFechaBetween(cuartelId,inicioAno, finAno)
-        val jornalesTotales = jornalesCuartel.sumOf { it.jornales }
-
         val variedadesCuartel = variedadCuartelRepository.findByCuartel(cuartel)
-        val superficieTotal = variedadesCuartel.sumOf { it.superficie }
 
         // Generar reporte por variedad
         val reportesPorVariedad = variedadesCuartel.map { vc ->
             val variedad = vc.variedad ?: throw EntityNotFoundException("Variedad no encontrada")
             val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
+                cuartel.id,
                 variedad.id, inicioAno, finAno
             )
             val indicadorReporte = getIndicadorVariedad(cuartel, variedad, ano)
@@ -58,8 +55,8 @@ class ReporteService(
         return ReporteDto(
             id = cuartel.id,
             nombre = cuartel.nombre,
-            superficie = superficieTotal,
-            jornales = jornalesTotales,
+            superficie = reportesPorVariedad.sumOf { it.superficie },
+            jornales = reportesPorVariedad.sumOf { it.jornales },
             hileras = variedadesCuartel.sumOf { it.hileras },
             reporteVariedades = reportesPorVariedad,
             rendimiento = getIndicadorCuartel(cuartel,ano)?.rendimiento?.toDoubleOrNull() ?: 0.00,
@@ -140,6 +137,7 @@ class ReporteService(
 
         // Obtener todos los jornales para esta variedad en el período
         val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
+            cuartelId,
             variedad.id, inicioAno, finAno
         )
 
@@ -347,6 +345,7 @@ class ReporteService(
                 .orElseThrow { EntityNotFoundException("La variedad no está asociada con este cuartel") }
 
             val jornalesVariedad = jornalRepository.findByCuartelAndVariedadAndFechaBetween(
+                cuartelId,
                 variedad.id,
                 LocalDateTime.of(ano, 1, 1, 0, 0),
                 LocalDateTime.of(ano, 12, 31, 23, 59, 59)
