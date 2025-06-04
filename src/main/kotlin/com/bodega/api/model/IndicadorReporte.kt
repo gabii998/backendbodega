@@ -38,5 +38,8 @@ data class IndicadorReporte(
 
     @ManyToOne
     @JoinColumn(name = "idVariedad")
-    var variedad: VariedadUva? = null
+    var variedad: VariedadUva? = null,
+
+    @Column(name = "esGeneral")
+    var esGeneral:Boolean? = false,
 )

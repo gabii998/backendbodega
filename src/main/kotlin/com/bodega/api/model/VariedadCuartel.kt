@@ -14,13 +14,16 @@ data class VariedadCuartel(
     @JoinColumn(name = "idVariedad")
     var variedad: VariedadUva? = null,
 
-    @Column(name = "superficie")
-    var superficie: Double = 0.0,
-
     @Column(name = "hileras")
     var hileras: Int = 0,
 
     @ManyToOne
     @JoinColumn(name = "idCuartel")
-    var cuartel: Cuartel? = null
-)
+    var cuartel: Cuartel? = null,
+
+    @OneToMany(mappedBy = "variedadCuartel")
+    var historicoSuperficie: MutableList<HistoricoSuperficie> = mutableListOf()
+) {
+    val superficieActual:Double?
+        get() = historicoSuperficie.maxByOrNull { it.ano }?.superficie
+}

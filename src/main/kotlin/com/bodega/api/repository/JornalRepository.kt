@@ -13,8 +13,7 @@ import java.time.LocalDateTime
 
 @Repository
 interface JornalRepository : JpaRepository<Jornal, Int> {
-    fun findByEmpleado(empleado: Empleado): List<Jornal>
-
+    @Query("SELECT j FROM Jornal j WHERE j.fecha BETWEEN :inicio AND :fin")
     fun findByFechaBetween(inicio: LocalDateTime, fin: LocalDateTime): List<Jornal>
 
     // Consulta corregida para encontrar jornales por cuartel y rango de fechas

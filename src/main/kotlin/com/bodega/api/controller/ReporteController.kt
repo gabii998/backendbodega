@@ -34,6 +34,14 @@ class ReporteController(private val reporteService: ReporteService) {
         return ResponseEntity.ok(detalle)
     }
 
+    @GetMapping("/anio/{anio}/detalle")
+    fun obtenerDetalleGeneral(
+        @PathVariable anio: Int
+    ): ResponseEntity<DetalleVariedadDto> {
+        val detalle = reporteService.obtenerDetalleGeneral(anio)
+        return ResponseEntity.ok(detalle)
+    }
+
     @PutMapping("/anio/{anio}/cuartel/{cuartelId}/indicadores")
     fun actualizarIndicadoresCuartel(
         @PathVariable anio: Int,
@@ -61,6 +69,14 @@ class ReporteController(private val reporteService: ReporteService) {
         @PathVariable cuartelId: Int
     ): ResponseEntity<IndicadoresDto> {
         val indicadores = reporteService.obtenerIndicadoresCuartel(anio, cuartelId)
+        return ResponseEntity.ok(indicadores)
+    }
+
+    @GetMapping("/anio/{anio}/indicadores")
+    fun obtenerIndicadoresGeneral(
+        @PathVariable anio: Int
+    ): ResponseEntity<IndicadoresDto> {
+        val indicadores = reporteService.obtenerIndicadoresGeneral(anio)
         return ResponseEntity.ok(indicadores)
     }
 
