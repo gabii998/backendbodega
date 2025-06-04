@@ -21,7 +21,7 @@ data class VariedadCuartel(
     @JoinColumn(name = "idCuartel")
     var cuartel: Cuartel? = null,
 
-    @OneToMany(mappedBy = "variedadCuartel")
+    @OneToMany(mappedBy = "variedadCuartel",cascade = [CascadeType.ALL],)
     var historicoSuperficie: MutableList<HistoricoSuperficie> = mutableListOf()
 ) {
     val superficieActual:Double?

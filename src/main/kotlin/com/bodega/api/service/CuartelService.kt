@@ -61,31 +61,61 @@ class CuartelService(
     }
 
     @Transactional
-    fun guardarCuartel(id:Int,cuartelDto: CuartelDto): Cuartel {
+    fun editarCuartel(id: Int, cuartelDto: CuartelDto): CuartelResponse {
+        val cuartelResponse = CuartelResponse()
+        val variedades = mutableListOf<VariedadInfoDto>()
+        val cuartel = cuartelRepository.findById(id)
+            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $id") }
+        val varIds = cuartelDto.variedades.map { variedadDto -> variedadDto.id }
+        val toDelete = cuartel.variedades.filter { it.id !in varIds }
+        toDelete.forEach {
+            variedadCuartelRepository.deleteById(it.id)
+            cuartel.variedades.remove(it)
+        }
+
         cuartelDto.variedades.forEach {
-            val variedad = variedadCuartelRepository.findById(it.id)
-                .orElseThrow { EntityNotFoundException("VariedadCuartel no encontrada con ID: ${it.id}") }
-
-            if (variedad.hileras != it.hileras) {
-                variedad.hileras = it.hileras
-                variedadCuartelRepository.save(variedad)
-            }
-
-            if (it.superficie != variedad.superficieActual) {
+            if (it.id == null) {
+                val variedadUva = variedadRepository.findById(it.idVariedad).orElseThrow()
+                val newVariedadCuartel = variedadCuartelRepository.save(VariedadCuartel(
+                    variedad = variedadUva,
+                    hileras = it.hileras,
+                    cuartel = cuartel
+                ))
+                val savedVc = variedadCuartelRepository.save(newVariedadCuartel)
                 val superficie = HistoricoSuperficie(
                     superficie = it.superficie,
                     ano = 2025,
-                    variedadCuartel = variedad
+                    variedadCuartel = savedVc
                 )
-                superficieRepository.deleteByYearAndVariedadCuartelId(it.id,2025)
                 superficieRepository.save(superficie)
+                savedVc.historicoSuperficie.add(superficie)
+                variedades.add(VariedadInfoDto(savedVc))
+            } else {
+                val variedad = variedadCuartelRepository.findById(it.id)
+                    .orElseThrow { EntityNotFoundException("VariedadCuartel no encontrada con ID: ${it.id}") }
 
-                variedad.historicoSuperficie.removeIf { hs -> hs.ano == 2025 }
-                variedad.historicoSuperficie.add(superficie)
+                if (variedad.hileras != it.hileras) {
+                    variedad.hileras = it.hileras
+                    variedadCuartelRepository.save(variedad)
+                }
+
+                if (it.superficie != variedad.superficieActual) {
+                    val superficie = HistoricoSuperficie(
+                        superficie = it.superficie,
+                        ano = 2025,
+                        variedadCuartel = variedad
+                    )
+                    superficieRepository.deleteByYearAndVariedadCuartelId(it.id,2025)
+                    superficieRepository.save(superficie)
+
+                    variedad.historicoSuperficie.removeIf { hs -> hs.ano == 2025 }
+                    variedad.historicoSuperficie.add(superficie)
+                }
+                variedades.add(VariedadInfoDto(variedad))
             }
+
         }
-        val cuartel = cuartelRepository.findById(id)
-            .orElseThrow { EntityNotFoundException("Cuartel no encontrado con ID: $id") }
+
         val finca = fincaRepository.findById(cuartelDto.fincaId)
             .orElseThrow { EntityNotFoundException("Finca no encontrada con ID: ${cuartelDto.fincaId}") }
         val encargado = empleadoRepository.findById(cuartelDto.encargadoId)
@@ -95,14 +125,18 @@ class CuartelService(
         cuartel.sistema = SistemaCultivo.valueOf(cuartelDto.sistema)
         cuartel.finca = finca
         cuartel.encargado = encargado
-
-        return cuartelRepository.save(cuartel)
-    }
-
-    @Transactional
-    fun editarCuartel(id: Int, cuartelDto: CuartelDto): CuartelResponse {
-        val cuartel = guardarCuartel(id, cuartelDto)
-        return convertirACuartelResponse(cuartel)
+        val savedCuartel = cuartelRepository.save(cuartel)
+        cuartelResponse.apply {
+            this.id = savedCuartel.id
+            nombre = savedCuartel.nombre
+            sistema = savedCuartel.sistema.name
+            superficieTotal = variedades.sumOf { it.superficie }
+            hileras = variedades.sumOf { it.hileras }
+            encargadoId = encargado.id
+            encargadoNombre = encargado.nombre
+            this.variedades = variedades
+        }
+        return cuartelResponse
     }
 
     @Transactional
@@ -140,6 +174,7 @@ class CuartelService(
         val variedadesInfo = variedades.map { vc ->
             VariedadInfoDto(
                 id = vc.id,
+                idVariedad = vc.variedad?.id ?: -1,
                 nombre = vc.variedad?.nombre ?: "",
                 superficie = vc.superficieActual ?: 0.0,
                 hileras = vc.hileras,
