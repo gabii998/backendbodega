@@ -1,10 +1,7 @@
 package com.bodega.api.repository
 
 import com.bodega.api.dto.JornalResponse
-import com.bodega.api.model.Cuartel
-import com.bodega.api.model.Empleado
-import com.bodega.api.model.Jornal
-import com.bodega.api.model.VariedadUva
+import com.bodega.api.model.*
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -15,6 +12,9 @@ import java.time.LocalDateTime
 interface JornalRepository : JpaRepository<Jornal, Int> {
     @Query("SELECT j FROM Jornal j WHERE j.fecha BETWEEN :inicio AND :fin")
     fun findByFechaBetween(inicio: LocalDateTime, fin: LocalDateTime): List<Jornal>
+
+    @Query("SELECT j FROM Jornal j WHERE j.cuartel.sistema = :sistema and j.fecha BETWEEN :inicio AND :fin")
+    fun findByTipoAndFechaBetween(inicio: LocalDateTime, fin: LocalDateTime,sistema:SistemaCultivo): List<Jornal>
 
     // Consulta corregida para encontrar jornales por cuartel y rango de fechas
     @Query("SELECT j FROM Jornal j WHERE j.cuartel.id = :idCuartel AND j.variedad.id = :idVariedad AND j.fecha BETWEEN :inicio AND :fin")

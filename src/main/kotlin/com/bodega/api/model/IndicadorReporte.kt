@@ -9,7 +9,7 @@ data class IndicadorReporte(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "idIndicadorReporte")
-    val id: Int = 0,
+    val id: Int? = 0,
 
     @Column(name = "estructura")
     var estructura: String = "",
@@ -28,7 +28,10 @@ data class IndicadorReporte(
 
     @Column(name = "rendimiento")
     var rendimiento: String = "",
-
+    @Column
+    var tipoIndicador: TipoIndicador? = null,
+    @Column
+    var anio:Int? = null,
     @ManyToOne
     @JoinColumn(name = "idCuartel")
     var cuartel: Cuartel? = null,
@@ -39,7 +42,8 @@ data class IndicadorReporte(
     @ManyToOne
     @JoinColumn(name = "idVariedad")
     var variedad: VariedadUva? = null,
-
-    @Column(name = "esGeneral")
-    var esGeneral:Boolean? = false,
 )
+
+enum class TipoIndicador {
+    VARIEDAD,CUARTEL,PARRAL,ESPALDERO,GENERAL
+}

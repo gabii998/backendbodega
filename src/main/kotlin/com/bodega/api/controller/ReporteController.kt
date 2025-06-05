@@ -1,6 +1,7 @@
 package com.bodega.api.controller
 
 import com.bodega.api.dto.*
+import com.bodega.api.model.SistemaCultivo
 import com.bodega.api.service.ReporteService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -42,6 +43,37 @@ class ReporteController(private val reporteService: ReporteService) {
         return ResponseEntity.ok(detalle)
     }
 
+    @GetMapping("/anio/{anio}/espaldero/detalle")
+    fun obtenerDetalleEspaldero(
+        @PathVariable anio: Int
+    ): ResponseEntity<DetalleVariedadDto> {
+        val detalle = reporteService.obtenerDetallePorTipo(anio,SistemaCultivo.Espaldero)
+        return ResponseEntity.ok(detalle)
+    }
+
+    @GetMapping("/anio/{anio}/parral/detalle")
+    fun obtenerDetalleParral(
+        @PathVariable anio: Int
+    ): ResponseEntity<DetalleVariedadDto> {
+        val detalle = reporteService.obtenerDetallePorTipo(anio,SistemaCultivo.Parral)
+        return ResponseEntity.ok(detalle)
+    }
+
+    @PutMapping("/anio/{anio}/indicadores")
+    fun actualizarIndicadorGeneral(@PathVariable anio: Int,@RequestBody indicadores: IndicadoresDto):ResponseEntity<IndicadoresDto> {
+        return ResponseEntity.ok(reporteService.actualizarIndicadorGeneral(anio, indicadores))
+    }
+
+    @PutMapping("/anio/{anio}/espaldero/indicadores")
+    fun actualizarIndicadorEspaldero(@PathVariable anio: Int,@RequestBody indicadores: IndicadoresDto):ResponseEntity<IndicadoresDto> {
+        return ResponseEntity.ok(reporteService.actualizarIndicadorEspaldero(anio, indicadores))
+    }
+
+    @PutMapping("/anio/{anio}/parral/indicadores")
+    fun actualizarIndicadorParral(@PathVariable anio: Int,@RequestBody indicadores: IndicadoresDto):ResponseEntity<IndicadoresDto> {
+        return ResponseEntity.ok(reporteService.actualizarIndicadorParral(anio, indicadores))
+    }
+
     @PutMapping("/anio/{anio}/cuartel/{cuartelId}/indicadores")
     fun actualizarIndicadoresCuartel(
         @PathVariable anio: Int,
@@ -77,6 +109,22 @@ class ReporteController(private val reporteService: ReporteService) {
         @PathVariable anio: Int
     ): ResponseEntity<IndicadoresDto> {
         val indicadores = reporteService.obtenerIndicadoresGeneral(anio)
+        return ResponseEntity.ok(indicadores)
+    }
+
+    @GetMapping("/anio/{anio}/espaldero/indicadores")
+    fun obtenerIndicadoresEspalderos(
+        @PathVariable anio: Int
+    ): ResponseEntity<IndicadoresDto> {
+        val indicadores = reporteService.obtenerIndicadorPorTipo(anio,SistemaCultivo.Espaldero)
+        return ResponseEntity.ok(indicadores)
+    }
+
+    @GetMapping("/anio/{anio}/parral/indicadores")
+    fun obtenerIndicadoresParral(
+        @PathVariable anio: Int
+    ): ResponseEntity<IndicadoresDto> {
+        val indicadores = reporteService.obtenerIndicadorPorTipo(anio,SistemaCultivo.Parral)
         return ResponseEntity.ok(indicadores)
     }
 
